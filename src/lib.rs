@@ -5,27 +5,39 @@ macro_rules! __internal_matrix_match {
         ($first:expr, $sec:expr) ; $patSs:tt =>
         $( $patF:pat => $exs:tt;)+
     ) => {{
-        let sec = $sec;
-        match $first {
-            $( $patF => {
-                $crate::__internal_matrix_match!(@secmatch (sec); $patSs; $exs)
-            } )*
-        }
+            $crate::__internal_matrix_match!(@arms ($first, $sec) (($($patF),*), ($($exs),*)); $patSs; ($($patF),*); ($($exs),*);)
     }};
 
-    (@secmatch
-        ($val:expr);
-        ($($pat:pat),+);
-        ($($ex:expr),+)
-    ) => {{
-        #[allow(unused_variables)]
-        match $val {
-            $(
-            $pat => {$ex}
-            )*
-        }
-    }};
+    // removes one from PatF and exs
+    (@arms
+        $args:tt $firsts:tt;
+        ($patS:pat, $($patSRest:tt)*);
+        ($patF:pat, $($patFRest:tt)*);
+        ($ex:expr, $($exsRest:tt)*);
+        $($arms:tt)*
+    ) => {
+            $crate::__internal_matrix_match!(@arms
+                $args $firsts;
+                ($patS, $($patSRest)*);
+                ($($patFRest)*);
+                ($($exsRest)*);
+                $($arms)*
+            )
+    };
+
+    // no more PatF and exs, so remove one from parS
+    (@arms
+        $args:tt $firsts:tt;
+        ($patS:pat, $($patSRest:tt)*);
+        ($(,)?);
+        ($(,)?);
+        $($arms:tt)*
+    ) => {
+    };
+
 }
+
+// #[allow(unused_variables)]
 
 /// Some doc comment
 #[macro_export]
@@ -37,6 +49,22 @@ macro_rules! matrix_match {
         $crate::__internal_matrix_match!(($first, $sec) ; ($($patS),*) =>
         $( $patF => ($($ex),*);)*)
     }};
+}
+
+fn basic_use() {
+    #[allow(dead_code)]
+    enum En {
+        A,
+        B,
+        C,
+    }
+
+    matrix_match!(
+        (En::A, true) ; true ,  false  =>
+        En::A         => 1    ,   2     ;
+        En::B         => 3    ,   4     ;
+        En::C         => 5    ,   6
+    );
 }
 
 #[cfg(test)]
