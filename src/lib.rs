@@ -7,25 +7,24 @@ macro_rules! __internal_matrix_match {
     ) => {{
             __internal_matrix_match!(@arms_setup;
                 ($first, $sec);
-                ($patSs);
-                ($($exs),*);
-                ($($patF),*);
+                $patSs;
+                ($($exs,)*);
+                ($($patF,)*);
                 $patSs
             )
     }};
 
-    // removes one from PatF and exs
     (@arms_setup;
         $args:tt;
         $secPats:tt;
-        ($ex:expr, $($exsRest:tt),*);
+        ($ex:tt, $($exsRest:tt,)*);
         $patF:tt;
         $patSs:tt
     ) => {
             __internal_matrix_match!(@arms;
                 $args;
                 $secPats;
-                ($($exsRest),*);
+                ($($exsRest,)*);
                 $patF;
                 $patSs;
                 $ex;
@@ -37,42 +36,58 @@ macro_rules! __internal_matrix_match {
         $args:tt;
         $secPats:tt;
         $exs:tt;
-        ($patF:pat, $($patFRest:tt),*);
-        ($patS:pat, $($patSRest:tt),*);
-        ($ex:expr, $($exRest:tt),*);
+        ($patF:tt, $($patFRest:tt,)*);
+        ($patS:tt, $($patSRest:tt,)*);
+        ($ex:tt, $($exRest:tt,)*);
         $($arms:tt)*
     ) => {
-            { $ex }
             __internal_matrix_match!(@arms;
                 $args;
                 $secPats;
                 $exs;
-                ($patF, $($patFRest),*);
-                ($($patSRest),*);
-                ($($exRest),*);
+                ($patF, $($patFRest,)*);
+                ($($patSRest,)*);
+                ($($exRest,)*);
                 $($arms)*
                 ($patF, $patS) => { $ex }
             )
     };
 
+    (@arms;
+        $args:tt;
+        ($($secPats:pat,)*);
+        ($ex:tt, $($exRest:tt,)*);
+        ($patF:tt, $($patFRest:tt,)*);
+        ();
+        ();
+        $($arms:tt)*
+    ) => {
+            __internal_matrix_match!(@arms;
+                $args;
+                ($($secPats,)*);
+                ($($exRest,)*);
+                ($($patFRest,)*);
+                ($($secPats,)*);
+                $ex;
+                $($arms)*
+            )
+    };
 
-    // removes one from PatF and exs
     (@arms;
         $args:tt;
         $secPats:tt;
-        $exs:tt;
-        ($patF:pat, $($patFRest:tt),*);
-        ($(,)?);
-        ($(,)?);
+        ();
+        ($patF:tt,);
+        ();
+        ();
         $($arms:tt)*
     ) => {
+        #[allow(unused_variables)]
         match $args {
             $($arms)*
         }
     };
 }
-
-// #[allow(unused_variables)]
 
 /// Some doc comment
 #[macro_export]
@@ -81,27 +96,9 @@ macro_rules! matrix_match {
         ($first:expr, $sec:expr) ; $($patS:pat),+    =>
         $( $patF:pat            => $($ex:expr),+);+ $(;)?
     ) => {{
-        __internal_matrix_match!(($first, $sec) ; ($($patS),*) =>
-        $( $patF => ($($ex),*);)*)
+        __internal_matrix_match!(($first, $sec) ; ($($patS,)*) =>
+        $( $patF => ($($ex,)*);)*)
     }};
-}
-
-fn basic_use() {
-    #[allow(dead_code)]
-    enum En {
-        A,
-        B,
-        C,
-    }
-
-    let a = En::A;
-
-    matrix_match!(
-        (En::A, true) ; true ,  false  =>
-        En::A         => 1    ,   2     ;
-        En::B         => 3    ,   4     ;
-        En::C         => 5    ,   6
-    );
 }
 
 #[cfg(test)]
@@ -179,10 +176,10 @@ mod test {
             matrix_match!(
                 (En::B(5), 4) ; 0..=3, b @ 4 , b  =>
                 En::A      =>    1   ,  40   , 2     ;
-                En::B(a)   =>    a   ,  80   , a * b ;
+                En::B(a)   =>    a   ,  b   , a * b ;
                 En::C      =>    5   ,  90   , 6     ;
             ),
-            80
+            4
         );
     }
 
