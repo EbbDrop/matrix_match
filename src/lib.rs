@@ -86,9 +86,7 @@ macro_rules! __internal_matrix_match {
     };
 
     (
-        $_args:tt;
-        $_culumn_pats_backup:tt;
-        $_rest_remaining_expr:tt;
+        $_args:tt; $_culumn_pats_backup:tt; $_rest_remaining_expr:tt;
         ($first_row_pat:tt, $($_rest_row_pats:tt,)*);
         ();
         ($_first_currrent_expr:tt, $($_rest_current_exprs:tt,)*);
@@ -98,9 +96,7 @@ macro_rules! __internal_matrix_match {
     };
 
     (
-        $_args:tt;
-        $_culumn_pats_backup:tt;
-        $_rest_remaining_expr:tt;
+        $_args:tt; $_culumn_pats_backup:tt; $_rest_remaining_expr:tt;
         ($first_row_pat:tt, $($_rest_row_pats:tt,)*);
         ($_first_col_pat:tt, $($_rest_col_pats:tt,)*);
         ();
@@ -229,5 +225,29 @@ mod test {
             ),
             5 * 2
         );
+    }
+
+    #[test]
+    fn big() {
+        for a in 0..=8 {
+            for b in 0..=9 {
+                assert_eq!(
+                    matrix_match!(
+                        (a, b) ; 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, _ =>
+                        0     =>   0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0  ;
+                        1     =>   0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 0  ;
+                        2     =>   0,  2,  4,  6,  8, 10, 12, 14, 16, 18, 0  ;
+                        3     =>   0,  3,  6,  9, 12, 15, 18, 21, 24, 27, 0  ;
+                        4     =>   0,  4,  8, 12, 16, 20, 24, 28, 32, 36, 0  ;
+                        5     =>   0,  5, 10, 15, 20, 25, 30, 35, 40, 45, 0  ;
+                        6     =>   0,  6, 12, 18, 24, 30, 36, 42, 48, 54, 0  ;
+                        7     =>   0,  7, 14, 21, 28, 35, 42, 49, 56, 63, 0  ;
+                        8     =>   0,  8, 16, 24, 32, 40, 48, 56, 64, 72, 0  ;
+                        _     =>   0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0  ;
+                    ),
+                    a * b
+                );
+            }
+        }
     }
 }
