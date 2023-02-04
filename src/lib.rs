@@ -2,37 +2,6 @@
 #[doc(hidden)]
 macro_rules! __internal_matrix_match {
     (
-        ($first:expr, $sec:expr) ; $patSs:tt =>
-        $( $patF:pat => $exs:tt;)+
-    ) => {{
-            __internal_matrix_match!(@arms_setup;
-                ($first, $sec);
-                $patSs;
-                ($($exs,)*);
-                ($($patF,)*);
-                $patSs
-            )
-    }};
-
-    (@arms_setup;
-        $args:tt;
-        $secPats:tt;
-        ($ex:tt, $($exsRest:tt,)*);
-        $patF:tt;
-        $patSs:tt
-    ) => {
-            __internal_matrix_match!(@arms;
-                $args;
-                $secPats;
-                ($($exsRest,)*);
-                $patF;
-                $patSs;
-                $ex;
-            )
-    };
-
-    // removes one from PatF and exs
-    (@arms;
         $args:tt;
         $secPats:tt;
         $exs:tt;
@@ -41,7 +10,7 @@ macro_rules! __internal_matrix_match {
         ($ex:tt, $($exRest:tt,)*);
         $($arms:tt)*
     ) => {
-            __internal_matrix_match!(@arms;
+            __internal_matrix_match!(
                 $args;
                 $secPats;
                 $exs;
@@ -53,7 +22,7 @@ macro_rules! __internal_matrix_match {
             )
     };
 
-    (@arms;
+    (
         $args:tt;
         ($($secPats:pat,)*);
         ($ex:tt, $($exRest:tt,)*);
@@ -62,7 +31,7 @@ macro_rules! __internal_matrix_match {
         ();
         $($arms:tt)*
     ) => {
-            __internal_matrix_match!(@arms;
+            __internal_matrix_match!(
                 $args;
                 ($($secPats,)*);
                 ($($exRest,)*);
@@ -73,7 +42,7 @@ macro_rules! __internal_matrix_match {
             )
     };
 
-    (@arms;
+    (
         $args:tt;
         $secPats:tt;
         ();
@@ -96,8 +65,14 @@ macro_rules! matrix_match {
         ($first:expr, $sec:expr) ; $($patS:pat),+    =>
         $( $patF:pat            => $($ex:expr),+);+ $(;)?
     ) => {{
-        __internal_matrix_match!(($first, $sec) ; ($($patS,)*) =>
-        $( $patF => ($($ex,)*);)*)
+            __internal_matrix_match!(
+                ($first, $sec);
+                ($($patS,)*);
+                ($(($($ex,)*),)*);
+                (_dummy, $($patF,)*);
+                ();
+                ();
+            )
     }};
 }
 
@@ -124,7 +99,7 @@ mod test {
 
         assert_eq!(
             matrix_match!(
-                (En::A, true) ; true ,  false  =>
+                (En::A, true)  ; true ,  false =>
                 En::A         => 1    ,   2     ;
                 En::B         => 3    ,   4     ;
                 En::C         => 5    ,   6
