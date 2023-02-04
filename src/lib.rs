@@ -1,52 +1,80 @@
+// Generates a single match statement using tt-munching and Push-down Accumulation. These techniques are needed because of
+// limitations of the macro system:
+// - All repetitions in a loop need to have the same length
+// - Macros need to output valid rust code
+// We run in to the first limitation because the matrix can have a different number of rows and columns.
+// This can be overcome by calling a inner macro for every outer repetitions with just a singe token tree
+// with the data of the inner repetitions, that macro can then do it's own repetition of a different length.
+// Sadly this can't be used here since the inner macro would need to produce match arms witch are not
+// valid rust code. The solution here is to use tt-munching and store the arms as input to the next macro,
+// since macro input does not need to be valid rust code.
+//
+// Input:
+// All the inputs except the first have trailing commas, this seems to help with matching tt
+//
+// - match arguments `(expr, expr)`
+// - a "backup" of the column patterns `(pat, pat, ...,)`
+// - a list if lists of results reaming to be processed `((expr, expr, ...,), (expr, expr, ...,), ...,)`
+// - the row patterns `(pat, pat, ...,)`
+// - the column patterns currently being processed `(pat, pat, ...,)`
+// - the results currently being processed `(expr, expr, ...,)`
+// - the arms produced so far
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __internal_matrix_match {
+    // Creates a new arms by taking the first patterns and the first expr. Only the column paterns
+    // and the expression gets removed.
     (
         $args:tt;
-        $secPats:tt;
-        $exs:tt;
-        ($patF:tt, $($patFRest:tt,)*);
-        ($patS:tt, $($patSRest:tt,)*);
-        ($ex:tt, $($exRest:tt,)*);
+        $culumn_pats_backup:tt;
+        $remaining_expresions:tt;
+        ($first_row_pat:tt, $($rest_row_pats:tt,)*);
+        ($first_col_pat:tt, $($rest_col_pats:tt,)*);
+        ($first_currrent_expr:tt, $($rest_current_exprs:tt,)*);
         $($arms:tt)*
     ) => {
             __internal_matrix_match!(
                 $args;
-                $secPats;
-                $exs;
-                ($patF, $($patFRest,)*);
-                ($($patSRest,)*);
-                ($($exRest,)*);
+                $culumn_pats_backup;
+                $remaining_expresions;
+                ($first_row_pat, $($rest_row_pats,)*);
+                ($($rest_col_pats,)*);
+                ($($rest_current_exprs,)*);
                 $($arms)*
-                ($patF, $patS) => { $ex }
+                ($first_row_pat, $first_col_pat) => { $first_currrent_expr }
             )
     };
 
+    // Ran when the current column patterns and the current expressions run out. This macro takes
+    // the cull column patterns "backup" and adds copies it back to the current patterns, while also
+    // taking the first list of results for the remaining results and makes it current.
     (
         $args:tt;
-        ($($secPats:pat,)*);
-        ($ex:tt, $($exRest:tt,)*);
-        ($patF:tt, $($patFRest:tt,)*);
+        ($($culumn_pats_backup:tt,)*);
+        ($first_remaining_expr:tt, $($rest_remaining_expr:tt,)*);
+        ($first_row_pat:tt, $($rest_row_pats:tt,)*);
         ();
         ();
         $($arms:tt)*
     ) => {
             __internal_matrix_match!(
                 $args;
-                ($($secPats,)*);
-                ($($exRest,)*);
-                ($($patFRest,)*);
-                ($($secPats,)*);
-                $ex;
+                ($($culumn_pats_backup,)*);
+                ($($rest_remaining_expr,)*);
+                ($($rest_row_pats,)*);
+                ($($culumn_pats_backup,)*);
+                $first_remaining_expr;
                 $($arms)*
             )
     };
 
+    // Ran when the current column patterns, the current expressions AND the remaining expressions run
+    // out. Takes the match arms produced and puts them in a match expression.
     (
         $args:tt;
-        $secPats:tt;
+        $_culumn_pats_backup:tt;
         ();
-        ($patF:tt,);
+        ($_last_row_pat:tt,);
         ();
         ();
         $($arms:tt)*
