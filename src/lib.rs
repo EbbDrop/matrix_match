@@ -84,6 +84,30 @@ macro_rules! __internal_matrix_match {
             $($arms)*
         }
     };
+
+    (
+        $_args:tt;
+        $_culumn_pats_backup:tt;
+        $_rest_remaining_expr:tt;
+        ($first_row_pat:tt, $($_rest_row_pats:tt,)*);
+        ();
+        ($_first_currrent_expr:tt, $($_rest_current_exprs:tt,)*);
+        $($_arms:tt)*
+    ) => {
+        compile_error!(concat!("The row with the patern `", stringify!($first_row_pat), "` has to many results!"))
+    };
+
+    (
+        $_args:tt;
+        $_culumn_pats_backup:tt;
+        $_rest_remaining_expr:tt;
+        ($first_row_pat:tt, $($_rest_row_pats:tt,)*);
+        ($_first_col_pat:tt, $($_rest_col_pats:tt,)*);
+        ();
+        $($_arms:tt)*
+    ) => {
+        compile_error!(concat!("The row with the patern `", stringify!($first_row_pat), "` has to little results!"))
+    };
 }
 
 /// Some doc comment
