@@ -94,14 +94,14 @@ macro_rules! __internal_matrix_match {
 /// }
 ///
 /// # fn main() {
-/// assert_eq!(next(Light::Red, true ), Light::Green);
-/// assert_eq!(next(Light::Red, false), Light::Red);
+/// assert_eq!(next(Light::Red,    true ), Light::Green);
+/// assert_eq!(next(Light::Red,    false), Light::Red);
 ///
 /// assert_eq!(next(Light::Orange, true ), Light::Red);
 /// assert_eq!(next(Light::Orange, false), Light::Red);
 ///
-/// assert_eq!(next(Light::Green, true ), Light::Green);
-/// assert_eq!(next(Light::Green, false), Light::Orange);
+/// assert_eq!(next(Light::Green,  true ), Light::Green);
+/// assert_eq!(next(Light::Green,  false), Light::Orange);
 /// # }
 ///
 /// ```
