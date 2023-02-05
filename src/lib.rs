@@ -1,3 +1,11 @@
+//! This crate provides a macro to easily match on two values at the same time.
+//!
+//! The [`matrix_match`] macro transforms a matrix of possible results into `match`
+//! statements rust understands. See the its documentation for examples and specifics.
+
+#![deny(missing_docs)]
+#![deny(unsafe_code)]
+
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __internal_matrix_match {
@@ -5,6 +13,7 @@ macro_rules! __internal_matrix_match {
         ($first:expr, $sec:expr) ; $patSs:tt =>
         $( $patF:pat => $exs:tt;)+
     ) => {{
+        // Extracting to a variable in case one of the patterns shadows the name.
         let sec = $sec;
         match $first {
             $( $patF => {
@@ -27,7 +36,75 @@ macro_rules! __internal_matrix_match {
     }};
 }
 
-/// Some doc comment
+/// Macro to match on a pair of values.
+///
+///
+/// # Usage
+/// ```rust
+/// # use matrix_match::matrix_match;
+/// # #[allow(non_camel_case_types)]
+/// # enum A { a, b}
+/// # #[allow(non_camel_case_types)]
+/// # enum B { a, b}
+/// # let a = A::a;
+/// # let b = B::b;
+/// matrix_match!(
+///     (a, b)    ; B::a , B::b =>
+///     A::a     => "aa" , "ab"  ;
+///     A::b     => "ba" , "bb"  )
+/// # ;
+/// ```
+/// First matches the first value to the patterns on the left. Then the second value gets matched
+/// to the patterns at the top. The expression at the intersection of both matches is what is
+/// eventually ran and possibly returned.
+///
+/// Destructuring is also possible inside a `matrix_match`:
+/// ```rust
+/// # use matrix_match::matrix_match;
+/// # let a = Some(());
+/// # let b = Ok(());
+/// matrix_match!(
+///     (a, b)    ; Ok(v) , Err(e) =>
+///     Some(s)  => s     , s       ;
+///     None     => v     , e       )
+/// # ;
+/// ```
+/// The same name can be used in separate columns or separate rows.
+/// A variable in a column will shadow any variable in a row with the same name!
+///
+/// # Full Example
+///
+/// ```rust
+/// # use matrix_match::matrix_match;
+/// #[derive(Debug, PartialEq, Eq, Copy, Clone)]
+/// enum Light {
+///     Red,
+///     Orange,
+///     Green,
+/// }
+///
+/// fn next(light: Light, car_waiting: bool) -> Light {
+///     use Light::*;
+///     matrix_match!(
+///         (light, car_waiting) ; true  , false =>
+///         Red                 => Green , Red    ;
+///         Orange              => Red   , Red    ;
+///         Green               => Green , Orange ;
+///     )
+/// }
+///
+/// # fn main() {
+/// assert_eq!(next(Light::Red, true ), Light::Green);
+/// assert_eq!(next(Light::Red, false), Light::Red);
+///
+/// assert_eq!(next(Light::Orange, true ), Light::Red);
+/// assert_eq!(next(Light::Orange, false), Light::Red);
+///
+/// assert_eq!(next(Light::Green, true ), Light::Green);
+/// assert_eq!(next(Light::Green, false), Light::Orange);
+/// # }
+///
+/// ```
 #[macro_export]
 macro_rules! matrix_match {
     (
@@ -148,7 +225,7 @@ mod test {
             for b in 0..=9 {
                 assert_eq!(
                     matrix_match!(
-                        (a, b) ;   0,  1,  2,  3,  4,  5,  6,  7,  8,  9, _ =>
+                        (a, b) ;  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, _ =>
                         0     =>   0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0  ;
                         1     =>   0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 0  ;
                         2     =>   0,  2,  4,  6,  8, 10, 12, 14, 16, 18, 0  ;
