@@ -287,7 +287,7 @@ mod test {
         }
 
         assert_eq!(
-            matrix_match_double!(
+            matrix_match!(
                 (Eb::B(4), Ea::A(false)) ; Ea::A(true)        , Ea::A(false)       , Ea::C           =>
                 Eb::A(true,  b)         => "aa".to_string()   , b.to_string()      , (!b).to_string() ;
                 Eb::A(false, b)         => "afat".to_string() , "afaf".to_string() , (b as u8 + 4).to_string()  ;
