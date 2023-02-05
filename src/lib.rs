@@ -21,7 +21,7 @@
 // - the arms produced so far
 #[macro_export]
 #[doc(hidden)]
-macro_rules! __internal_matrix_match {
+macro_rules! __internal_matrix_match_single {
     // Creates a new arms by taking the first patterns and the first expr. Only the column paterns
     // and the expression gets removed.
     (
@@ -33,7 +33,7 @@ macro_rules! __internal_matrix_match {
         ($first_currrent_expr:tt, $($rest_current_exprs:tt,)*);
         $($arms:tt)*
     ) => {
-            __internal_matrix_match!(
+            $crate::__internal_matrix_match_single!(
                 $args;
                 $culumn_pats_backup;
                 $remaining_expresions;
@@ -57,7 +57,7 @@ macro_rules! __internal_matrix_match {
         ();
         $($arms:tt)*
     ) => {
-            __internal_matrix_match!(
+            $crate::__internal_matrix_match_single!(
                 $args;
                 ($($culumn_pats_backup,)*);
                 ($($rest_remaining_expr,)*);
@@ -92,7 +92,7 @@ macro_rules! __internal_matrix_match {
         ($_first_currrent_expr:tt, $($_rest_current_exprs:tt,)*);
         $($_arms:tt)*
     ) => {
-        compile_error!(concat!("The row with the patern `", stringify!($first_row_pat), "` has to many results!"))
+        $crate::compile_error!(concat!("The row with the patern `", stringify!($first_row_pat), "` has to many results!"))
     };
 
     (
@@ -102,18 +102,18 @@ macro_rules! __internal_matrix_match {
         ();
         $($_arms:tt)*
     ) => {
-        compile_error!(concat!("The row with the patern `", stringify!($first_row_pat), "` has to little results!"))
+        $crate::compile_error!(concat!("The row with the patern `", stringify!($first_row_pat), "` has to little results!"))
     };
 }
 
 /// Some doc comment
 #[macro_export]
-macro_rules! matrix_match {
+macro_rules! matrix_match_single {
     (
         ($first:expr, $sec:expr) ; $($patS:pat),+    =>
         $( $patF:pat            => $($ex:expr),+);+ $(;)?
     ) => {{
-            __internal_matrix_match!(
+            $crate::__internal_matrix_match_single!(
                 ($first, $sec);
                 ($($patS,)*);
                 ($(($($ex,)*),)*);
@@ -121,6 +121,75 @@ macro_rules! matrix_match {
                 ();
                 ();
             )
+    }};
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __internal_matrix_match_double {
+    (
+        ($first:expr, $sec:expr) ; $patSs:tt =>
+        $( $patF:pat => $exs:tt;)+
+    ) => {{
+        let sec = $sec;
+        match $first {
+            $( $patF => {
+                $crate::__internal_matrix_match_double!(@secmatch (sec); $patSs; $exs)
+            } )*
+        }
+    }};
+
+    (@secmatch
+        ($val:expr);
+        ($($pat:pat),+);
+        ($($ex:expr),+)
+    ) => {{
+        #[allow(unused_variables)]
+        match $val {
+            $(
+            $pat => {$ex}
+            )*
+        }
+    }};
+}
+
+/// Some doc comment
+#[macro_export]
+macro_rules! matrix_match_double {
+    (
+        ($first:expr, $sec:expr) ; $($patS:pat),+    =>
+        $( $patF:pat            => $($ex:expr),+);+ $(;)?
+    ) => {{
+        $crate::__internal_matrix_match_double!(($first, $sec) ; ($($patS),*) =>
+        $( $patF => ($($ex),*);)*)
+    }};
+}
+
+#[cfg(not(debug_assertions))]
+#[macro_export]
+macro_rules! matrix_match {
+    (
+        ($first:expr, $sec:expr) ; $($patS:pat),+    =>
+        $( $patF:pat            => $($ex:expr),+);+ $(;)?
+    ) => {{
+        $crate::matrix_match_single!(
+            ($first, $sec) ; $($patS),+    =>
+            $( $patF      => $($ex),+);+;
+        )
+    }};
+}
+
+#[cfg(debug_assertions)]
+#[macro_export]
+macro_rules! matrix_match {
+    (
+        ($first:expr, $sec:expr) ; $($patS:pat),+    =>
+        $( $patF:pat            => $($ex:expr),+);+ $(;)?
+    ) => {{
+        $crate::matrix_match_double!(
+            ($first, $sec) ; $($patS),+    =>
+            $( $patF      => $($ex),+);+;
+        )
     }};
 }
 
@@ -203,6 +272,28 @@ mod test {
                 En::C      =>    5   ,  90   , 6     ;
             ),
             4
+        );
+
+        #[allow(dead_code)]
+        pub enum Ea {
+            A(bool),
+            C,
+        }
+
+        #[allow(dead_code)]
+        pub enum Eb {
+            A(bool, bool),
+            B(u32),
+        }
+
+        assert_eq!(
+            matrix_match_double!(
+                (Eb::B(4), Ea::A(false)) ; Ea::A(true)        , Ea::A(false)       , Ea::C           =>
+                Eb::A(true,  b)         => "aa".to_string()   , b.to_string()      , (!b).to_string() ;
+                Eb::A(false, b)         => "afat".to_string() , "afaf".to_string() , (b as u8 + 4).to_string()  ;
+                Eb::B(i)                => (i+4).to_string()  , (i*2).to_string()  , match i { 3 => "abcd".to_string(), _ => "cdef".to_string() }  ;
+            ),
+            "8".to_string()
         );
     }
 
