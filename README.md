@@ -1,4 +1,7 @@
 # Matrix Match
+[![Crates.io](https://img.shields.io/crates/v/matrix_match.svg)](https://crates.io/crates/matrix_match)
+[![Documentation](https://docs.rs/matrix_match/badge.svg)](https://docs.rs/matrix_match)
+
 This crate provides a macro to easily match on two values at the same time.
 
 The macro takes a matrix of possible results and patterns for the rows and
