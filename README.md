@@ -42,5 +42,5 @@ fn main() {
 
 ## Implementation details
 The macro first creates a match for the row patterns and then for every row creates a match for the column patterns.
-There exists a implementation in the [single-match](tree/single-match) branch that only creates a single match. 
+There exists a implementation in the [single-match](https://github.com/EbbDrop/matrix_match/tree/main) branch that only creates a single match.
 After some benchmarking (also in that branch) it was determined that both implementation are just as fast at run time and so the simpler one was chosen.
