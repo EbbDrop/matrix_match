@@ -2,7 +2,10 @@
 //!
 //! The [`matrix_match`] macro transforms a matrix of possible results into `match`
 //! statements rust understands. See the its documentation for examples and specifics.
+//!
+//! This crate can be used in no-std contexts.
 
+#![cfg_attr(not(test), no_std)]
 #![deny(missing_docs)]
 #![deny(unsafe_code)]
 

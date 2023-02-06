@@ -4,6 +4,8 @@ This crate provides a macro to easily match on two values at the same time.
 The macro takes a matrix of possible results and patterns for the rows and
 columns. The expression at the intersection of the matching patterns gets executed and possibly returned.
 
+This crate can be used in no-std contexts.
+
 ## Example
 
 ```rust
@@ -39,4 +41,6 @@ fn main() {
 ```
 
 ## Implementation details
-The macro first creates a match for the row patterns and then for every row creates a match for the column patterns. There exists a implementation in the single-match branch that only creates a single match. After some benchmarking (also in that branch) it was determined that both implementation are just as fast at run time and so the simpler one was chosen.
+The macro first creates a match for the row patterns and then for every row creates a match for the column patterns.
+There exists a implementation in the [single-match](tree/single-match) branch that only creates a single match. 
+After some benchmarking (also in that branch) it was determined that both implementation are just as fast at run time and so the simpler one was chosen.
